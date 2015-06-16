@@ -7,6 +7,11 @@
 namespace keyence
 {
 
+/**
+ * @brief Tcp/IP implementation of the Keyence Client
+ *
+ * Throws 'keyence::KeyenceException' upon error
+ */
 class TcpClient : public Client
 {
 public:

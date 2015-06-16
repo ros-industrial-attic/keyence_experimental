@@ -25,7 +25,7 @@ public:
     Request(uint8_t program_no) : program_no(program_no)
     {}
 
-    void encode(MutableBuffer buffer)
+    void encodeInto(MutableBuffer buffer)
     {
       insert(buffer.data, program_no);
     }
@@ -35,7 +35,7 @@ public:
 
   struct Response
   {
-    void decode(MutableBuffer)
+    void decodeFrom(MutableBuffer)
     {}
   };
 };
