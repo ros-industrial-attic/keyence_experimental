@@ -1,18 +1,34 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(keyence_experimental)
 
-include_directories(include)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  pcl_ros
+)
+catkin_package(
+ CATKIN_DEPENDS roscpp pcl_ros
+)
 
-# Build the underlying implementation library
-add_library(keyence_impl src/impl/keyence_tcp_client.cpp
-                         src/impl/messages/high_speed_single_profile.cpp
-                         src/impl/ljv7_rawdata.cpp)
-target_link_libraries(keyence_impl socket++)
+###########
+## Build ##
+###########
 
-# Build test program for changing active program
-add_executable(keyence_change_program src/utilities/change_program.cpp)
-target_link_libraries(keyence_change_program keyence_impl)
+add_subdirectory(keyence_library EXCLUDE_FROM_ALL)
 
-# Build test program for single keyence profile
-add_executable(keyence_get_profile src/utilities/get_profile.cpp)
-target_link_libraries(keyence_get_profile keyence_impl)
+include_directories(
+  include
+  keyence_library/include
+  ${catkin_INCLUDE_DIRS}
+)
+
+add_executable(keyence_driver_node src/keyence_driver_node.cpp)
+
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+# add_dependencies(keyence_driver_node keyence_driver_generate_messages_cpp)
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(keyence_driver_node
+  keyence_impl
+  ${catkin_LIBRARIES}
+)
