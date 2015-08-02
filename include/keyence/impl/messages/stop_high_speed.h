@@ -21,7 +21,7 @@ public:
     const static uint8_t command_code = 0x48;
 
     // Required encode function
-    void encodeInto(MutableBuffer buffer) {}
+    void encodeInto(MutableBuffer) {}
   };
 
   struct Response

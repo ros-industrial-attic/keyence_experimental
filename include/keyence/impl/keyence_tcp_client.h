@@ -20,6 +20,9 @@ public:
   virtual int send(const void* data, std::size_t size); // override
   virtual int recv(void* data, std::size_t size); // override
 
+  std::string hostName() const { return sock_.gethost(); }
+  std::string hostPort() const { return sock_.getport(); }
+
 protected:
   libsocket::inet_stream sock_;
 };
