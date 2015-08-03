@@ -8,27 +8,31 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
 )
 
+add_service_files(
+  FILES
+  ChangeProgram.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
+
 catkin_package(
   INCLUDE_DIRS
     keyence_library/include
   LIBRARIES
     keyence_impl
   DEPENDS
-)
+
 
 include_directories(
-  include
   keyence_library/include
   ${catkin_INCLUDE_DIRS}
 )
 
 add_executable(keyence_driver_node src/keyence_driver_node.cpp)
-
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
 add_dependencies(keyence_driver_node keyence_driver_generate_messages_cpp)
-
-## Specify libraries to link a library or executable target against
 target_link_libraries(keyence_driver_node
   keyence_impl
   ${catkin_LIBRARIES}

@@ -10,38 +10,22 @@
 #include "keyence/impl/keyence_exception.h"
 
 #include "keyence/impl/messages/high_speed_single_profile.h"
+
 #include "keyence/impl/messages/change_program.h"
+#include "keyence_experimental/ChangeProgram.h"
+#include "boost/ref.hpp"
+#include "boost/bind.hpp"
 
 // keyence protocol / profile related defines
 static const std::string KEYENCE_DEFAULT_TCP_PORT = "24691";
 static const std::string KEYENCE_DEFAULT_TCP_PORT_HS = "24692";
-
-#define KEYENCE_RET_CODE_NO_DATA 0xA0
-
-const static double KEYENCE_PDEPTH_UNIT = 0.01d; // in micro meters
-
-// TODO: only a difference of 2; most likely some (undocumented) flag?
-const static int32_t KEYENCE_INFINITE_DISTANCE_VALUE = -524288;
-const static int32_t KEYENCE_INFINITE_DISTANCE_VALUE2 = -524286;
 
 // values LJ Navigator uses for out-of-range points (in meters)
 const static double KEYENCE_INFINITE_DISTANCE_VALUE_SI = -999.9990d / 1e3;
 const static double KEYENCE_INFINITE_DISTANCE_VALUE_SI2 = -999.9970d / 1e3;
 
 // default values for parameters
-const static double DEFAULT_SAMPLE_RATE = 10.0;
 const static std::string DEFAULT_FRAME_ID = "sensor_optical_frame";
-
-// error codes for receive_get_profile_response(..)
-#define RESP_ERR_OK 0
-#define RESP_ERR_PFX_LEN 1
-#define RESP_ERR_UNL_PFX_LEN 2
-#define RESP_ERR_PKT_BUFF_OVERFLOW 3
-#define RESP_ERR_RECV_PAYLOAD 4
-#define RESP_ERR_EAGAIN 5
-#define RESP_ERR_BRC 6
-#define RESP_ERR_ABN_BODY_LEN 7
-#define RESP_ERR_HDR_RET_CODE 8
 
 // local types
 typedef pcl::PointCloud<pcl::PointXYZ> point_cloud_t;
@@ -54,6 +38,23 @@ int keyence_profile_to_pc(const keyence::ProfileInformation& info,
                           bool cnv_inf_pts,
                           double scale_factor);
 
+bool changeProgramCallback(keyence_experimental::ChangeProgram::Request& req,
+                           keyence_experimental::ChangeProgram::Response& res,
+                           keyence::TcpClient& client,
+                           bool& active_flag)
+{
+  ROS_INFO("Attempting to change keyence program to %hhd with active flag: %hhd", req.program_no, req.active);
+  keyence::command::ChangeProgram::Request cmd (req.program_no);
+  keyence::Client::Response<keyence::command::ChangeProgram::Request> resp = client.sendReceive(cmd);
+  if (resp.good())
+  {
+    active_flag = req.active;
+    return true;
+  }
+  else
+    return false;
+}
+
 
 int main(int argc, char** argv)
 {
@@ -62,35 +63,32 @@ int main(int argc, char** argv)
 
   // ros parameters
   std::string sensor_host;
-  std::string head_a_model;
   std::string frame_id;
   std::string sensor_port;
   double sample_rate;
 
-  // param init
   // check required parameters
   if (!pnh.hasParam("controller_ip"))
   {
    ROS_FATAL("Parameter 'controller_ip' missing. Cannot continue.");
    return -1;
   }
-  
-  if (!pnh.hasParam("head_a_model"))
+
+  if (!pnh.hasParam("sample_rate"))
   {
-   ROS_FATAL("Parameter 'head_a_model' missing. Cannot continue.");
-   return -1;
+    ROS_FATAL("Parameter 'sample_rate' missing. Cannot continue.");
+    return -2;
   }
 
   pnh.getParam("controller_ip", sensor_host);
-  pnh.getParam("head_a_model", head_a_model);
+  pnh.getParam("sample_rate", sample_rate);
   pnh.param<std::string>("controller_port", sensor_port, KEYENCE_DEFAULT_TCP_PORT);
-  pnh.param("sample_rate", sample_rate, DEFAULT_SAMPLE_RATE);
   pnh.param<std::string>("frame_id", frame_id, DEFAULT_FRAME_ID);
 
-  ROS_INFO("Connecting to %s (TCP %s), expecting a single %s head",
-   sensor_host.c_str(), sensor_port.c_str(), head_a_model.c_str());
+  ROS_INFO("Connecting to %s (TCP %s), expecting a single head attached to port A.",
+   sensor_host.c_str(), sensor_port.c_str());
 
-  ROS_INFO("Attempting to publish at %.2f Hz", sample_rate);
+  ROS_INFO("Attempting to publish at %.2f Hz.", sample_rate);
 
   // setup point cloud message (we reuse single one)
   // TODO: this won't work with nodelets
@@ -102,20 +100,26 @@ int main(int argc, char** argv)
   // set up profile cloud publisher
   ros::Publisher pub = nh.advertise<point_cloud_t>("keyence_profiles", 10);
 
+  // This flag
+  bool active_flag = true;
+
   while (ros::ok())
   {
     try
     {
       // Establish communications
       keyence::TcpClient keyence (sensor_host, sensor_port);
-      ROS_INFO_STREAM("Keyence connection established");
 
-      // Set the Keyence to safe default program
-      keyence::command::ChangeProgram::Request cmd (0);
-      keyence.sendReceive(cmd);
+      ros::ServiceServer program_server = nh.advertiseService<keyence_experimental::ChangeProgram::Request,
+                              keyence_experimental::ChangeProgram::Response>
+                              ("change_program",
+                               boost::bind(changeProgramCallback, _1, _2, boost::ref(keyence), boost::ref(active_flag)));
+
+      ROS_INFO_STREAM("Keyence connection established");
 
       // Main loop
       ros::Rate sleeper(sample_rate);
+      sleeper.reset();
       while (ros::ok())
       {
         sleeper.sleep();
@@ -130,11 +134,17 @@ int main(int argc, char** argv)
           continue;
         }
 
+        if (!active_flag)
+        {
+          ROS_INFO_THROTTLE(60, "Sensor is disabled via the 'activity flag'.");
+          continue;
+        }
+
         // unpack profile data
         keyence::command::SingleProfile::Request req;
         keyence::Client::Response<keyence::command::SingleProfile::Request> resp = keyence.sendReceive(req);
         // Check for success
-        if (resp.header.return_code != 0)
+        if (!resp.good())
         {
           ROS_WARN_STREAM("Error code in header:\n" << resp.header);
         }
@@ -172,7 +182,7 @@ int keyence_profile_to_pc(const keyence::ProfileInformation& info, const std::ve
   cnv_inf_pts=true;
   scale_factor=1;
 
-  const double x_start = (info.x_start * KEYENCE_PDEPTH_UNIT);
+  const double x_start = (info.x_start * KEYENCE_FUNDAMENTAL_LENGTH_UNIT);
   double x = 0., y = 0., z = 0.;
 
   msg->points.reserve(info.num_profiles);
@@ -181,14 +191,14 @@ int keyence_profile_to_pc(const keyence::ProfileInformation& info, const std::ve
   for (unsigned int i = 0; i < points.size(); ++i)
   {
     // convert profile points to SI units (meters)
-    x = (x_start + (i * (info.x_increment * KEYENCE_PDEPTH_UNIT))) / 1e6;
+    x = (x_start + (i * (info.x_increment * KEYENCE_FUNDAMENTAL_LENGTH_UNIT))) / 1e6;
     y = 0.;
-    z = ((info.data_unit * KEYENCE_PDEPTH_UNIT) * points[i]) / 1e6;
+    z = ((info.data_unit * KEYENCE_FUNDAMENTAL_LENGTH_UNIT) * points[i]) / 1e6;
 
     // filter out 'infinite distance' points
     // REP-117: http://www.ros.org/reps/rep-0117.html
     //  "out of range detections will be represented by +Inf."
-    if(points[i] == KEYENCE_INFINITE_DISTANCE_VALUE)
+    if(points[i] == KEYENCE_INVALID_DATA_VALUE)
     {
       if (cnv_inf_pts)
         z = std::numeric_limits<double>::infinity();
@@ -198,7 +208,7 @@ int keyence_profile_to_pc(const keyence::ProfileInformation& info, const std::ve
 
     // device returns two different values that are supposed to be interpreted
     // as out-of-range or 'infinite'. This is the second
-    if(points[i] == KEYENCE_INFINITE_DISTANCE_VALUE2)
+    if(points[i] == KEYENCE_DEAD_ZONE_DATA_VALUE)
     {
       if (cnv_inf_pts)
         z = std::numeric_limits<double>::infinity();
