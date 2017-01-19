@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(keyence_experimental)
+project(keyence_comm_lib)
 
 include_directories(include)
 

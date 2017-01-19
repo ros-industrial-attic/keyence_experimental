@@ -6,6 +6,7 @@ add_compile_options(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   pcl_ros
+  message_generation
 )
 
 add_service_files(
@@ -15,7 +16,6 @@ add_service_files(
 
 generate_messages(
   DEPENDENCIES
-  std_msgs  # Or other packages containing msgs
 )
 
 catkin_package(
@@ -23,8 +23,10 @@ catkin_package(
     keyence_library/include
   LIBRARIES
     keyence_impl
+  CATKIN_DEPENDS
+    message_runtime
   DEPENDS
-
+)
 
 include_directories(
   keyence_library/include
@@ -32,7 +34,7 @@ include_directories(
 )
 
 add_executable(keyence_driver_node src/keyence_driver_node.cpp)
-add_dependencies(keyence_driver_node keyence_driver_generate_messages_cpp)
+add_dependencies(keyence_driver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(keyence_driver_node
   keyence_impl
   ${catkin_LIBRARIES}
