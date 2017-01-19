@@ -7,12 +7,14 @@
 
 #include "keyence/impl/keyence_exception.h"
 #include "keyence/impl/keyence_tcp_client.h"
-
 #include "keyence/impl/messages/high_speed_single_profile.h"
+#include "keyence/impl/messages/change_program.h"
+#include "keyence/impl/messages/get_setting.h"
+#include "keyence/impl/settings_defs.h"
 
 #include "boost/bind.hpp"
 #include "boost/ref.hpp"
-#include "keyence/impl/messages/change_program.h"
+
 #include "keyence_experimental/ChangeProgram.h"
 
 // keyence protocol / profile related defines
@@ -35,23 +37,163 @@ int unpackProfileToPointCloud(const keyence::ProfileInformation& info,
                               const std::vector<int32_t>& points, Cloud& msg, bool cnv_inf_pts,
                               double scale_factor);
 
+
+/**
+ * @brief Given a @e client, makes a request to figure out if the given @e program
+ * is continuously triggered or not.
+ */
+bool isProgramContinuouslyTriggered(keyence::TcpClient& client, uint8_t program)
+{
+  uint8_t level = 0; // write settings area
+  uint8_t type = 0x10 + program;
+  uint8_t category = keyence::setting::program::TriggerMode::category;
+  uint8_t item = keyence::setting::program::TriggerMode::item;
+
+  keyence::command::GetSetting::Request req (level, type, category, item, 0, 0, 0, 0);
+  auto resp = client.sendReceive(req);
+
+  if (!resp.good())
+  {
+    throw keyence::KeyenceException("Controller responded but errored on request");
+  }
+
+  uint8_t result_id = resp.body.data[0];
+
+  if (result_id == keyence::setting::program::TriggerMode::continuous_trigger)
+  {
+    return true;
+  }
+  else
+  {
+    return false;
+  }
+}
+
+/**
+ * @brief Get's the active program number by making a settings-read request and pulling
+ * the number out of the response header.
+ */
+uint8_t getActiveProgramNumber(keyence::TcpClient& client)
+{
+  uint8_t level = 0; // write settings area
+  uint8_t type = 0x10;
+  uint8_t category = keyence::setting::program::TriggerMode::category;
+  uint8_t item = keyence::setting::program::TriggerMode::item;
+
+  keyence::command::GetSetting::Request req (level, type, category, item, 0, 0, 0, 0);
+  auto resp = client.sendReceive(req);
+
+  return resp.header.active_program_no;
+}
+
+/**
+ * @brief Get's the commanded sampling frequency of the auto-trigger setting
+ * for the given program. Ranges from 10 Hz - 64 kHz. This driver can currently
+ * do only about 200 Hz. The sensor can only do about 1 kHz over TCP/IP with
+ * its high speed mode.
+ */
+double getProgramSamplingRate(keyence::TcpClient& client, uint8_t program)
+{
+  uint8_t level = 0; // write settings area
+  uint8_t type = 0x10 + program;
+  uint8_t category = keyence::setting::program::SamplingPeriod::category;
+  uint8_t item = keyence::setting::program::SamplingPeriod::item;
+
+  keyence::command::GetSetting::Request req (level, type, category, item, 0, 0, 0, 0);
+  auto resp = client.sendReceive(req);
+
+  if (!resp.good())
+  {
+    throw keyence::KeyenceException("Controller responded but errored on request");
+  }
+
+  uint8_t result_id = resp.body.data[0];
+
+  switch (result_id)
+  {
+  case keyence::setting::program::SamplingPeriod::freq_10hz:
+    return 10.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_20hz:
+    return 20.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_50hz:
+    return 50.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_100hz:
+    return 100.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_200hz:
+    return 200.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_500hz:
+    return 500.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_1000hz:
+    return 1000.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_2000hz:
+    return 2000.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_4000hz:
+    return 4000.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_4130hz:
+    return 4130.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_8000hz:
+    return 8000.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_16000hz:
+    return 16000.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_32000hz:
+    return 32000.0;
+    break;
+  case keyence::setting::program::SamplingPeriod::freq_64000hz:
+    return 64000.0;
+    break;
+  default:
+    throw keyence::KeyenceException("Received unrecognized frequency code: " + std::to_string(result_id));
+  }
+}
+
+/**
+ * @brief Services external ROS requests to change the active program. Will reset
+ * activity flag and sampling rate according to the settings of the new program.
+ */
 bool changeProgramCallback(keyence_experimental::ChangeProgram::Request& req,
                            keyence_experimental::ChangeProgram::Response& res,
-                           keyence::TcpClient& client, bool& active_flag)
+                           keyence::TcpClient& client, bool& active_flag,
+                           ros::Rate& rate)
 {
-  ROS_INFO("Attempting to change keyence program to %hhd with active flag: %hhd", req.program_no,
-           req.active);
+  ROS_INFO("Attempting to change keyence program to %hhd", req.program_no);
+
   keyence::command::ChangeProgram::Request cmd(req.program_no);
   keyence::Client::Response<keyence::command::ChangeProgram::Request> resp =
       client.sendReceive(cmd);
+
   if (resp.good())
   {
-    active_flag = req.active;
+    active_flag = isProgramContinuouslyTriggered(client, req.program_no);
+    double sample_rate = getProgramSamplingRate(client, req.program_no);
+    rate = ros::Rate(sample_rate);
+
+    ROS_INFO("Program successfully changed to %hhu with sample freq of %f and"
+             " continuous sampling mode = %hhu", req.program_no, sample_rate,
+             static_cast<uint8_t>(active_flag));
+
+    if (sample_rate > 200.0)
+    {
+      ROS_WARN("Note that when sampling above 200Hz this driver will likely not keep up");
+    }
+
     return true;
   }
   else
     return false;
 }
+
 
 int main(int argc, char** argv)
 {
@@ -71,14 +213,7 @@ int main(int argc, char** argv)
     return -1;
   }
 
-  if (!pnh.hasParam("sample_rate"))
-  {
-    ROS_FATAL("Parameter 'sample_rate' missing. Cannot continue.");
-    return -2;
-  }
-
   pnh.getParam("controller_ip", sensor_host);
-  pnh.getParam("sample_rate", sample_rate);
   pnh.param<std::string>("controller_port", sensor_port, KEYENCE_DEFAULT_TCP_PORT);
   pnh.param<std::string>("frame_id", frame_id, DEFAULT_FRAME_ID);
 
@@ -105,17 +240,31 @@ int main(int argc, char** argv)
       // Establish communications
       keyence::TcpClient keyence(sensor_host, sensor_port);
 
+      auto active_program = getActiveProgramNumber(keyence);
+      active_flag = isProgramContinuouslyTriggered(keyence, active_program);
+      sample_rate = getProgramSamplingRate(keyence, active_program);
+
+      ROS_INFO("Connection established to Keyence controller.");
+      ROS_INFO("Beginning with program %hhu with a sampling rate of %f",
+               active_program, sample_rate);
+      if (!active_flag)
+      {
+        ROS_INFO("Note that program %hhu is not configured for continuous sampling",
+                 active_program);
+      }
+
+      ros::Rate sleeper (sample_rate);
+
       ros::ServiceServer program_server =
           nh.advertiseService<keyence_experimental::ChangeProgram::Request,
                               keyence_experimental::ChangeProgram::Response>(
               "change_program", boost::bind(changeProgramCallback, _1, _2, boost::ref(keyence),
-                                            boost::ref(active_flag)));
+                                            boost::ref(active_flag), boost::ref(sleeper)));
 
       ROS_INFO("Keyence connection established");
       ROS_INFO("Attempting to publish at %.2f Hz.", sample_rate);
 
       // Main loop
-      ros::Rate sleeper(sample_rate);
       sleeper.reset();
       while (ros::ok())
       {
