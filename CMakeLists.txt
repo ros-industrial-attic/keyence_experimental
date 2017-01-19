@@ -1,10 +1,19 @@
 cmake_minimum_required(VERSION 2.8.12)
-
 project(keyence_experimental)
 
 add_compile_options(-std=c++11)
 
+find_package(catkin REQUIRED)
+
 include_directories(include)
+
+catkin_package(
+  INCLUDE_DIRS 
+    include
+  LIBRARIES 
+    keyence_impl
+  DEPENDS
+)
 
 # Build the underlying implementation library
 add_library(keyence_impl src/impl/keyence_tcp_client.cpp
