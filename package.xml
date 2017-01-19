@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>keyence_experimental</name>
+  <version>0.1.0</version>
+  <description>
+    An implementation of the Keyence communication protocol.
+  </description>
+
+  <maintainer email="jmeyer@swri.org">Jonathan Meyer</maintainer>
+  <author>Matt West</author>
+  <author>G.A. vd. Hoorn (TU Delft Robotics Institute)</author>
+  <author email="jmeyer@swri.org">Jonathan Meyer</author>
+
+  <license>Apache 2.0</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>
