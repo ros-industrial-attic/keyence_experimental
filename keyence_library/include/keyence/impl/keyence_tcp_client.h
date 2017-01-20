@@ -8,7 +8,7 @@ namespace keyence
 {
 
 /**
- * @brief Tcp/IP implementation of the Keyence Client
+ * @brief Tcp/IP implementation of the Keyence Client using libsocket++
  *
  * Throws 'keyence::KeyenceException' upon error
  */
@@ -17,8 +17,8 @@ class TcpClient : public Client
 public:
   TcpClient(const std::string& host, const std::string& port);
 
-  virtual int send(const void* data, std::size_t size); // override
-  virtual int recv(void* data, std::size_t size); // override
+  int send(const void* data, std::size_t size) override;
+  int recv(void* data, std::size_t size) override;
 
 protected:
   libsocket::inet_stream sock_;

@@ -3,28 +3,41 @@ project(keyence_experimental)
 
 add_compile_options(-std=c++11)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS
+  roscpp
+  pcl_ros
+  message_generation
+)
 
-include_directories(include)
+add_service_files(
+  FILES
+  ChangeProgram.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+)
 
 catkin_package(
-  INCLUDE_DIRS 
-    include
-  LIBRARIES 
+  INCLUDE_DIRS
+    keyence_library/include
+  LIBRARIES
     keyence_impl
+  CATKIN_DEPENDS
+    message_runtime
   DEPENDS
 )
 
-# Build the underlying implementation library
-add_library(keyence_impl src/impl/keyence_tcp_client.cpp
-                         src/impl/messages/high_speed_single_profile.cpp
-                         src/impl/ljv7_rawdata.cpp)
-target_link_libraries(keyence_impl socket++)
+include_directories(
+  keyence_library/include
+  ${catkin_INCLUDE_DIRS}
+)
 
-# Build test program for changing active program
-add_executable(keyence_change_program src/utilities/change_program.cpp)
-target_link_libraries(keyence_change_program keyence_impl)
+add_executable(keyence_driver_node src/keyence_driver_node.cpp)
+add_dependencies(keyence_driver_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(keyence_driver_node
+  keyence_impl
+  ${catkin_LIBRARIES}
+)
 
-# Build test program for single keyence profile
-add_executable(keyence_get_profile src/utilities/get_profile.cpp)
-target_link_libraries(keyence_get_profile keyence_impl)
+add_subdirectory(keyence_library)

@@ -1,0 +1,7 @@
+uint8 program_no
+---
+int32 code
+
+int32 SUCCESS = 0
+int32 ERROR_OUT_OF_RANGE = 1
+int32 ERROR_OTHER = 2 # A catch all for errors

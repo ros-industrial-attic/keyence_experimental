@@ -21,6 +21,8 @@ public:
   {
     Message::ResponseHeader header;
     typename ReqT::response_type body;
+
+    bool good() const { return header.return_code == 0; }
   };
 
   // Synchronous interface
