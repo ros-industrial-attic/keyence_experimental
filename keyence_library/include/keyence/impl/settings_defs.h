@@ -9,6 +9,22 @@ namespace setting
 {
 
 /**
+ * The keyence controller keeps several copies of its settings around.
+ * Updates appear to be transactional: The user writes into the
+ * 'write_area' and then must 'reflect' those changes to the running_area,
+ * the 'save area' or both.
+ */
+const static uint8_t write_area = 0;
+const static uint8_t running_area = 1;
+const static uint8_t save_area = 2;
+
+/**
+ * The keyence controller supports 16 different programs, 0 to 15
+ */
+const static uint8_t min_program_index = 0;
+const static uint8_t max_program_index = 15;
+
+/**
  * Program data is referenced using type = 0x10 for program 0,
  * type = 0x11 for program 1, and so on until 0x1F. See the
  * individual types for category and item information as well
@@ -16,6 +32,19 @@ namespace setting
  */
 namespace program
 {
+
+/**
+ * @brief Returns the 'type' value appropriate for the given logical program
+ * number. This field goes into the 'type' field of the get/set settings
+ * commands.
+ * @param logical_program_no The index of the user program you wish to get the
+ * associated type for. Valid inputs are 0 - 15.
+ * @return Integer that can be used in keyence::command::GetSetting
+ */
+inline uint8_t programType(uint8_t logical_program_no)
+{
+  return 0x10 + logical_program_no;
+}
 
 struct TriggerMode
 {

@@ -44,8 +44,8 @@ int unpackProfileToPointCloud(const keyence::ProfileInformation& info,
  */
 bool isProgramContinuouslyTriggered(keyence::TcpClient& client, uint8_t program)
 {
-  uint8_t level = 0; // write settings area
-  uint8_t type = 0x10 + program;
+  uint8_t level = keyence::setting::write_area;
+  uint8_t type = keyence::setting::program::programType(program);
   uint8_t category = keyence::setting::program::TriggerMode::category;
   uint8_t item = keyence::setting::program::TriggerMode::item;
 
@@ -75,8 +75,8 @@ bool isProgramContinuouslyTriggered(keyence::TcpClient& client, uint8_t program)
  */
 uint8_t getActiveProgramNumber(keyence::TcpClient& client)
 {
-  uint8_t level = 0; // write settings area
-  uint8_t type = 0x10;
+  uint8_t level = keyence::setting::write_area;
+  uint8_t type = keyence::setting::program::programType(0);
   uint8_t category = keyence::setting::program::TriggerMode::category;
   uint8_t item = keyence::setting::program::TriggerMode::item;
 
@@ -94,8 +94,8 @@ uint8_t getActiveProgramNumber(keyence::TcpClient& client)
  */
 double getProgramSamplingRate(keyence::TcpClient& client, uint8_t program)
 {
-  uint8_t level = 0; // write settings area
-  uint8_t type = 0x10 + program;
+  uint8_t level = keyence::setting::write_area;
+  uint8_t type = keyence::setting::program::programType(program);
   uint8_t category = keyence::setting::program::SamplingPeriod::category;
   uint8_t item = keyence::setting::program::SamplingPeriod::item;
 
@@ -167,31 +167,54 @@ bool changeProgramCallback(keyence_experimental::ChangeProgram::Request& req,
                            keyence::TcpClient& client, bool& active_flag,
                            ros::Rate& rate)
 {
-  ROS_INFO("Attempting to change keyence program to %hhd", req.program_no);
-
-  keyence::command::ChangeProgram::Request cmd(req.program_no);
-  keyence::Client::Response<keyence::command::ChangeProgram::Request> resp =
-      client.sendReceive(cmd);
-
-  if (resp.good())
+  if (req.program_no > keyence::setting::max_program_index)
   {
-    active_flag = isProgramContinuouslyTriggered(client, req.program_no);
-    double sample_rate = getProgramSamplingRate(client, req.program_no);
-    rate = ros::Rate(sample_rate);
-
-    ROS_INFO("Program successfully changed to %hhu with sample freq of %f and"
-             " continuous sampling mode = %hhu", req.program_no, sample_rate,
-             static_cast<uint8_t>(active_flag));
-
-    if (sample_rate > 200.0)
-    {
-      ROS_WARN("Note that when sampling above 200Hz this driver will likely not keep up");
-    }
-
+    ROS_ERROR("Rejecting program change request: Commanded program index %hhu is out of"
+              " the valid range %hhu to %hhu", req.program_no, keyence::setting::min_program_index,
+              keyence::setting::max_program_index);
+    res.code = res.ERROR_OUT_OF_RANGE;
     return true;
   }
-  else
-    return false;
+
+  ROS_INFO("Attempting to change keyence program to %hhd", req.program_no);
+
+  try
+  {
+    keyence::command::ChangeProgram::Request cmd(req.program_no);
+    keyence::Client::Response<keyence::command::ChangeProgram::Request> resp =
+        client.sendReceive(cmd);
+
+    if (resp.good())
+    {
+      active_flag = isProgramContinuouslyTriggered(client, req.program_no);
+      double sample_rate = getProgramSamplingRate(client, req.program_no);
+      rate = ros::Rate(sample_rate);
+
+      ROS_INFO("Program successfully changed to %hhu with sample freq of %f and"
+               " continuous sampling mode = %hhu", req.program_no, sample_rate,
+               static_cast<uint8_t>(active_flag));
+
+      if (sample_rate > 200.0)
+      {
+        ROS_WARN("Note that when sampling above 200Hz this driver will likely not keep up");
+      }
+
+      res.code = res.SUCCESS;
+      return true;
+    }
+    else
+    {
+      res.code = res.ERROR_OTHER;
+    }
+
+  } catch (const keyence::KeyenceException& e) // TODO: The exception safety here is suspect
+  {                                            // We could fail on the setting reads after a
+                                               // successful program change.
+    ROS_ERROR("Keyence threw exception while processing program change request: %s",
+              e.what());
+    res.code = res.ERROR_OTHER;
+    return true;
+  }
 }
 
 
