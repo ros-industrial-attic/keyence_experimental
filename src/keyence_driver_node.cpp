@@ -34,8 +34,7 @@ typedef pcl::PointCloud<pcl::PointXYZ> Cloud;
 // Prototype for function that converts a given profile to
 // a PCL point cloud
 int unpackProfileToPointCloud(const keyence::ProfileInformation& info,
-                              const std::vector<int32_t>& points, Cloud& msg, bool cnv_inf_pts,
-                              double scale_factor);
+                              const std::vector<int32_t>& points, Cloud& msg, bool cnv_inf_pts);
 
 
 /**
@@ -322,8 +321,8 @@ int main(int argc, char** argv)
         {
           // convert to pointcloud
           pc_msg->points.clear();
-          unpackProfileToPointCloud(resp.body.profile_info, resp.body.profile_points, *pc_msg, true,
-                                    1);
+          unpackProfileToPointCloud(resp.body.profile_info, resp.body.profile_points, *pc_msg, true);
+
           // publish pointcloud
           pub.publish(pc_msg);
         }
@@ -341,28 +340,25 @@ int main(int argc, char** argv)
 }
 
 int unpackProfileToPointCloud(const keyence::ProfileInformation& info,
-                              const std::vector<int32_t>& points, Cloud& msg, bool cnv_inf_pts,
-                              double scale_factor)
+                              const std::vector<int32_t>& points, Cloud& msg, bool cnv_inf_pts)
 {
   // TODO: get proper timestamp from somewhere
   // pcl header stamps are in microseconds
   msg.header.stamp = ros::Time::now().toNSec() / 1e3;
   msg.width = info.num_profiles;
   cnv_inf_pts = true;
-  scale_factor = 1;
 
-  const double x_start = (info.x_start * KEYENCE_FUNDAMENTAL_LENGTH_UNIT);
   double x = 0., y = 0., z = 0.;
 
   msg.points.reserve(info.num_profiles);
 
   // add points
-  for (unsigned int i = 0; i < points.size(); ++i)
+  for (int i = 0; i < static_cast<int>(points.size()); ++i)
   {
     // convert profile points to SI units (meters)
-    x = (x_start + (i * (info.x_increment * KEYENCE_FUNDAMENTAL_LENGTH_UNIT))) / 1e6;
-    y = 0.;
-    z = ((info.data_unit * KEYENCE_FUNDAMENTAL_LENGTH_UNIT) * points[i]) / 1e6;
+    x = keyence::unitsToMeters(info.x_start + i * info.x_increment);
+    y = 0.0;
+    z = keyence::unitsToMeters(static_cast<int>(info.data_unit) * points[i]);
 
     // filter out 'infinite distance' points
     // REP-117: http://www.ros.org/reps/rep-0117.html
@@ -384,10 +380,6 @@ int unpackProfileToPointCloud(const keyence::ProfileInformation& info,
       else
         z = KEYENCE_INFINITE_DISTANCE_VALUE_SI2;
     }
-
-    x *= scale_factor;
-    y *= scale_factor;
-    z *= scale_factor; // 'inf * something' still inf
 
     msg.points.push_back(pcl::PointXYZ(x, y, z));
   }
