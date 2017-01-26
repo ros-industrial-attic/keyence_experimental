@@ -35,7 +35,7 @@ inline bool isPointValid(int32_t pt)
  *
  * The fundamental keyence base-unit of length is 0.01 micrometers.
  * Therefore a 50 in the 'data_unit' field means that the value sent
- * over for a given depth measurement is in units of 50 * 0.1 = 0.5 um.
+ * over for a given depth measurement is in units of 50 * 0.01 = 0.5 um.
  */
 struct ProfileInformation
 {
@@ -44,6 +44,11 @@ struct ProfileInformation
   int32_t x_start;
   int32_t x_increment;
 };
+
+inline double unitsToMeters(int32_t unit)
+{
+  return unit * KEYENCE_FUNDAMENTAL_LENGTH_UNIT;
+}
 
 }
 
