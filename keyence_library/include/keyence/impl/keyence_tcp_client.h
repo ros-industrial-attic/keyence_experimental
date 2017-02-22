@@ -2,7 +2,7 @@
 #define KEYENCE_TCP_CLIENT_H
 
 #include "keyence_client.h"
-#include "libsocket/inetclientstream.hpp"
+#include "inetclientstream.hpp"
 
 namespace keyence
 {

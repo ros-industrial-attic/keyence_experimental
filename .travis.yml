@@ -1,6 +1,5 @@
-
 sudo: required 
-dist: trusty 
+dist: xenial
 language: generic 
 compiler:
   - gcc
@@ -12,7 +11,8 @@ env:
   global:
     - ROS_DISTRO=kinetic
     - NOT_TEST_INSTALL=true
-    - BEFORE_SCRIPT='./.install-libsocket++.sh'
+    - UPSTREAM_WORKSPACE=file
+    - ROSINSTALL_FILENAME=keyence_experimental.rosinstall
   matrix:
     - ROS_REPOSITORY_PATH=http://packages.ros.org/ros/ubuntu
     - ROS_REPOSITORY_PATH=http://packages.ros.org/ros-shadow-fixed/ubuntu
@@ -20,4 +20,3 @@ install:
   - git clone https://github.com/ros-industrial/industrial_ci.git .ci_config
 script: 
   - source .ci_config/travis.sh
-#  - source ./travis.sh  # Enable this when you have a package-local script
