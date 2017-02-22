@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/ros-industrial/keyence_experimental.svg?branch=kinetic-devel)](https://travis-ci.org/ros-industrial/keyence_experimental)
 # keyence_experimental
 A library for communicating with Keyence LJ-V series sensors over TCP/IP. 
 
