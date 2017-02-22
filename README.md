@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/ros-industrial/keyence_experimental.svg?branch=kinetic-devel)](https://travis-ci.org/ros-industrial/keyence_experimental)
 # keyence_experimental
 A library for communicating with Keyence LJ-V series sensors over TCP/IP. 
 
@@ -10,18 +11,18 @@ This package is divided into two logical components:
 
 ## Build
 The keyence library requires:
- - A C++11 compiler
- - [Libsocket](https://github.com/dermesser/libsocket)
+ - [wstool](http://wiki.ros.org/wstool)
 
-Building [libsocket](https://github.com/dermesser/libsocket) can be done according to the instructions on their website:
-
+Download wstool and dependencies:
 ```
-cmake CMakeLists.txt
-make
-make install
+mkdir -p my_workspace/src
+cd my_workspace/src
+wstool init .
+wstool merge https://github.com/ros-industrial/keyence_experimental/keyence_experimental.rosinstall
+wstool update
+cd ..
+catkin build
 ```
-
-You can also find an automated build script to do so in the [install-libsocket++.sh](install-libsocket++.sh) file.
 
 ## Capability
 Currently, laser program configuration must be done through the Windows-based Keyence utility. This API supports:
