@@ -18,7 +18,7 @@ Download wstool and dependencies:
 mkdir -p my_workspace/src
 cd my_workspace/src
 wstool init .
-wstool merge https://github.com/ros-industrial/keyence_experimental/keyence_experimental.rosinstall
+wstool merge https://github.com/ros-industrial/keyence_experimental/raw/kinetic-devel/keyence_experimental.rosinstall
 wstool update
 cd ..
 catkin build
