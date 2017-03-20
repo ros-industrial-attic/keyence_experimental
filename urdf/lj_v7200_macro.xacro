@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro">
+  <xacro:macro name="lj_v7200" params="prefix">
+  <xacro:property name="ref_dist_a" value="0.2"/>
+
+    <link name="${prefix}lj_v7200_frame">
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://keyence_experimental/meshes/visual/lj_v7200.dae"/>
+        </geometry>
+        <material name="dark grey">
+          <color rgba="0.2 0.2 0.2 1"/>
+        </material>
+      </visual>
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <mesh filename="package://keyence_experimental/meshes/collision/lj_v7200.stl"/>
+        </geometry>
+        <material name="dark grey">
+          <color rgba="0.2 0.2 0.2 1"/>
+        </material>
+      </collision>
+    </link>
+
+    <!-- Optical frame -->
+    <link name="${prefix}lj_v7200_optical_frame"/>
+    <joint name="optical_frame" type="fixed">
+      <origin xyz="0 0 ${ref_dist_a}" rpy="0 0 0"/>
+      <parent link="${prefix}lj_v7200_optical_frame"/>
+      <child link="${prefix}lj_v7200_frame"/>
+   </joint>
+  </xacro:macro>
+</robot>
+

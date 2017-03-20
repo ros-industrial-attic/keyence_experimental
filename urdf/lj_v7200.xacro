@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="lj_v7200">
+  <xacro:include filename="$(find keyence_experimental)/urdf/lj_v7200_macro.xacro"/>
+  <xacro:lj_v7200 prefix=""/>
+</robot>
+
