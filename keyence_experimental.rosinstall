@@ -1,3 +1,2 @@
-# Use until PR #45 is merged with https://github.com/dermesser/libsocket.git
-- git: {local-name: libsocket, uri: 'https://github.com/AustinDeric/libsocket.git',
-    version: kinetic-devel}
+- git: {local-name: libsocket, uri: 'https://github.com/InstitutMaupertuis/libsocket.git',
+    version: master}
