@@ -1,11 +1,11 @@
 #ifndef KEYENCE_MESSAGE_H
 #define KEYENCE_MESSAGE_H
 
-#include "keyence_buffer.h"
-#include "keyence_utils.h"
 #include <stdint.h>
 
 #include <iostream>
+#include <keyence_experimental/impl/keyence_buffer.h>
+#include <keyence_experimental/impl/keyence_utils.h>
 
 namespace keyence
 {

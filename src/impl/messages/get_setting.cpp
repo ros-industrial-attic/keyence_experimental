@@ -1,5 +1,5 @@
-#include "keyence/impl/messages/get_setting.h"
-#include "keyence/impl/keyence_utils.h"
+#include <keyence_experimental/impl/messages/get_setting.h>
+#include <keyence_experimental/impl/keyence_utils.h>
 
 keyence::command::GetSetting::Request::Request(uint8_t level, uint8_t type,
                                                   uint8_t category, uint8_t item,

@@ -1,8 +1,6 @@
-#include "keyence/impl/keyence_tcp_client.h"
-#include "keyence/impl/keyence_exception.h"
-// For given message
-#include "keyence/impl/messages/get_setting.h"
-
+#include <keyence_experimental/impl/messages/get_setting.h>
+#include <keyence_experimental/impl/keyence_exception.h>
+#include <keyence_experimental/impl/keyence_tcp_client.h>
 #include <cstdlib> // for atoi
 
 uint8_t safeCast(int x)

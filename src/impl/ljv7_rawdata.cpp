@@ -29,7 +29,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "keyence/impl/ljv7_rawdata.h"
+#include <keyence_experimental/impl/ljv7_rawdata.h>
 
 #include <stddef.h>
 #include <stdint.h>

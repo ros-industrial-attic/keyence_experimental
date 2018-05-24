@@ -1,7 +1,6 @@
-#include "keyence/impl/keyence_tcp_client.h"
-#include "keyence/impl/keyence_exception.h"
-// For given message
-#include "keyence/impl/messages/high_speed_single_profile.h"
+#include <keyence_experimental/impl/keyence_exception.h>
+#include <keyence_experimental/impl/keyence_tcp_client.h>
+#include <keyence_experimental/impl/messages/high_speed_single_profile.h>
 
 void displayProfile(const keyence::command::SingleProfile::Response& resp)
 {
