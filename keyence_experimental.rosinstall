@@ -1,2 +1,2 @@
-- git: {local-name: libsocket, uri: 'https://github.com/InstitutMaupertuis/libsocket.git',
+- git: {local-name: libsocket, uri: 'https://github.com/dermesser/libsocket.git',
     version: master}
