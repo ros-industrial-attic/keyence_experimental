@@ -31,7 +31,7 @@ Currently, laser program configuration must be done through the Windows-based Ke
 
 ## Examples
 
-See the [src/](src/) directory for C++ examples of the above capabilities.
+See the [keyence_library/src](keyence_library/src) directory for C++ examples of the above capabilities.
 
 ## ROS Node
 To run the ros node:

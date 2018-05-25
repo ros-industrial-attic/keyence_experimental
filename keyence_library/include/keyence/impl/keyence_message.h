@@ -4,8 +4,8 @@
 #include <stdint.h>
 
 #include <iostream>
-#include <keyence_experimental/impl/keyence_buffer.h>
-#include <keyence_experimental/impl/keyence_utils.h>
+#include <keyence/impl/keyence_buffer.h>
+#include <keyence/impl/keyence_utils.h>
 
 namespace keyence
 {

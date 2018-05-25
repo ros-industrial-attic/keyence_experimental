@@ -1,8 +1,8 @@
 #ifndef KEYENCE_HIGH_SPEED_SINGLE_PROFILE_H
 #define KEYENCE_HIGH_SPEED_SINGLE_PROFILE_H
 
-#include <keyence_experimental/impl/high_speed_defs.h>
-#include <keyence_experimental/impl/keyence_message.h>
+#include <keyence/impl/high_speed_defs.h>
+#include <keyence/impl/keyence_message.h>
 
 namespace keyence
 {

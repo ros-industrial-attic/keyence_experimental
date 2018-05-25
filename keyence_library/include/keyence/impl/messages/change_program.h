@@ -1,8 +1,8 @@
 #ifndef KEYENCE_CHANGE_PROGRAM_H
 #define KEYENCE_CHANGE_PROGRAM_H
 
-#include "../keyence_message.h"
-#include "../keyence_utils.h"
+#include <keyence/impl/keyence_message.h>
+#include <keyence/impl/keyence_utils.h>
 
 namespace keyence
 {

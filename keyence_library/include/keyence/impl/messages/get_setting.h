@@ -1,7 +1,7 @@
 #ifndef KEYENCE_GET_SETTING_H
 #define KEYENCE_GET_SETTING_H
 
-#include "../keyence_message.h"
+#include <keyence/impl/keyence_message.h>
 
 namespace keyence
 {

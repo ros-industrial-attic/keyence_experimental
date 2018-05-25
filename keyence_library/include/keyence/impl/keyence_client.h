@@ -1,7 +1,7 @@
 #ifndef KEYENCE_CLIENT_H
 #define KEYENCE_CLIENT_H
 
-#include <keyence_experimental/impl/keyence_message.h>
+#include <keyence/impl/keyence_message.h>
 
 namespace keyence
 {
