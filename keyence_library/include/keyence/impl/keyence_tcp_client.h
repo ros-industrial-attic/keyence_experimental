@@ -1,7 +1,7 @@
 #ifndef KEYENCE_TCP_CLIENT_H
 #define KEYENCE_TCP_CLIENT_H
 
-#include "keyence_client.h"
+#include <keyence/impl/keyence_client.h>
 #include "inetclientstream.hpp"
 
 namespace keyence

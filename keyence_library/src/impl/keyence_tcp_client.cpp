@@ -1,5 +1,5 @@
-#include "keyence/impl/keyence_tcp_client.h"
-#include "keyence/impl/keyence_exception.h"
+#include <keyence/impl/keyence_tcp_client.h>
+#include <keyence/impl/keyence_exception.h>
 
 keyence::TcpClient::TcpClient(const std::string& host, const std::string& port)
   try: sock_(host, port, LIBSOCKET_IPv4, 0)

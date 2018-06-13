@@ -1,6 +1,6 @@
-#include "keyence/impl/messages/high_speed_single_profile.h"
-#include "keyence/impl/keyence_utils.h"
-#include "keyence/impl/ljv7_rawdata.h"
+#include <keyence/impl/messages/high_speed_single_profile.h>
+#include <keyence/impl/keyence_utils.h>
+#include <keyence/impl/ljv7_rawdata.h>
 
 void keyence::command::SingleProfile::Request::encodeInto(MutableBuffer buffer)
 {
