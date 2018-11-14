@@ -21,4 +21,5 @@
   <depend>pcl_ros</depend>
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
+  <depend>libsocket</depend>
 </package>
