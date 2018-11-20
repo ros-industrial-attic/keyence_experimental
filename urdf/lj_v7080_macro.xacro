@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<robot xmlns:xacro="http://ros.org/wiki/xacro">
+<robot xmlns:xacro="http://wiki.ros.org/xacro">
   <xacro:macro name="lj_v7080" params="prefix">
   <xacro:property name="ref_dist_a" value="0.08"/>
 
